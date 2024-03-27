@@ -1,7 +1,8 @@
 import tkinter as tk
-from tkinter import Label
+from tkinter import Label, messagebox
 import random
-import Algoritmos
+import Profundidad
+import Anchura
 
 # El Sudoku inicial
 sudoku_inicial = [
@@ -98,12 +99,14 @@ def mostrar_algoritmos(ventana_principal, sudoku):
 
     # Botones para cada algoritmo
     tk.Button(algoritmos_frame, text="1. Profundidad", width=20,
-              command=lambda: Algoritmos.algoritmo_profundidad(sudoku)).pack(pady=5, side="top")
-    tk.Button(algoritmos_frame, text="2. Anchura", width=20).pack(pady=5, side="top")
+              command=lambda: Profundidad.Profundidad(sudoku)).pack(pady=5, side="top")
+    tk.Button(algoritmos_frame, text="2. Anchura", width=20, command=lambda: advertencia_anchura(sudoku)).pack(pady=5, side="top")
     tk.Button(algoritmos_frame, text="3. A*", width=20).pack(pady=5, side="top")
     tk.Button(algoritmos_frame, text="4. Coste", width=20).pack(pady=5, side="top")
     tk.Button(algoritmos_frame, text="5. Avara", width=20).pack(pady=5, side="top")
 
+
+# Funciones de Apoyo
 def es_sudoku_valido(sudoku):
     for i in range(9):
         fila = set()
@@ -130,3 +133,13 @@ def es_sudoku_valido(sudoku):
             cuadrado.add(valor_cuadrado)
 
     return True
+
+def advertencia_anchura(sudoku):
+    respuesta = messagebox.askokcancel("Advertencia de eficiencia",
+                                       "Este método no es eficiente y puede consumir muchos recursos.\n¿Deseas continuar?")
+    if respuesta:
+        # Aquí podrías llamar a la función del algoritmo de anchura o manejar la lógica deseada.
+        print("Ejecutando algoritmo de anchura...")
+        Anchura.Anchura(sudoku)
+    else:
+        print("Operación cancelada.")

@@ -2,36 +2,64 @@ import time
 import tkinter as tk
 
 
-def resolver_sudoku_profundidad(sudoku):
-    for fila in range(9):
-        for columna in range(9):
-            if sudoku[fila][columna] == 0:
-                for numero in range(1, 10):
-                    # Verificar si el número es posible
-                    if all(numero != sudoku[fila][j] for j in range(9)) and \
-                            all(numero != sudoku[i][columna] for i in range(9)) and \
-                            all(numero != sudoku[3 * (fila // 3) + i][3 * (columna // 3) + j] for i in range(3) for j in
-                                range(3)):
-
-                        sudoku[fila][columna] = numero
-
-                        if resolver_sudoku_profundidad(sudoku):
-                            return True
-
-                        sudoku[fila][columna] = 0  # Backtrack
+def Profundidad(sudoku, mostrar=True):
+    def es_valido(s, num, pos):
+        # Verificar la fila
+        for i in range(9):
+            if s[pos[0]][i] == num and pos[1] != i:
                 return False
-    return True  # Sudoku resuelto
 
-def algoritmo_profundidad(sudoku):
+        # Verificar la columna
+        for i in range(9):
+            if s[i][pos[1]] == num and pos[0] != i:
+                return False
+
+        # Verificar el cuadrante
+        cuadrante_x = pos[1] // 3
+        cuadrante_y = pos[0] // 3
+
+        for i in range(cuadrante_y*3, cuadrante_y*3 + 3):
+            for j in range(cuadrante_x * 3, cuadrante_x*3 + 3):
+                if s[i][j] == num and (i, j) != pos:
+                    return False
+        return True
+    def encontrar_vacia(s):
+        for i in range(len(s)):
+            for j in range(len(s[0])):
+                if s[i][j] == 0:
+                    return (i, j)  # fila, columna
+        return None
+    def resolver(s):
+        encontrar = encontrar_vacia(s)
+        if not encontrar:
+            return True  # Solucionado
+        else:
+            fila, columna = encontrar
+
+        for i in range(1, 10):
+            if es_valido(s, i, (fila, columna)):
+                s[fila][columna] = i
+
+                if resolver(s):
+                    return True
+
+                s[fila][columna] = 0  # Backtrack
+
+        return False  # Sin solucion
+    
     inicio = time.time()
-    if resolver_sudoku_profundidad(sudoku):
+
+    if resolver(sudoku):
         fin = time.time()
         tiempo = fin - inicio
-        mostrar_solucion(sudoku, "Sudoku Resuelto - Profundidad", tiempo)
+
+        if mostrar:
+            mostrar_solucion(sudoku, "Sudoku Resuelto - Profundidad", tiempo)
         print(f"Tiempo transcurrido: {tiempo:.2f} segundos")
+        return True  # Sudoku resuelto
     else:
         print("No se encontró una solución.")
-
+        return False  # Sin solución
 
 def mostrar_solucion(sudoku, titulo="Sudoku Resuelto", tiempo=None):
     ventana_solucion = tk.Tk()
