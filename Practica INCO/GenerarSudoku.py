@@ -3,6 +3,9 @@ from tkinter import Label, messagebox
 import random
 import Profundidad
 import Anchura
+import Avara
+import A_estrella
+import copy
 
 # El Sudoku inicial
 sudoku_inicial = [
@@ -93,17 +96,20 @@ def mostrar_sudoku(sudoku):
     ventana_sudoku.mainloop()
 
 def mostrar_algoritmos(ventana_principal, sudoku):
+    # Hacer una copia profunda del Sudoku
+    sudoku_copia = copy.deepcopy(sudoku)
+
     # Marco para los algoritmos, colocado debajo del marco del Sudoku
     algoritmos_frame = tk.Frame(ventana_principal)
     algoritmos_frame.pack(side="top", fill="x", pady=(20, 0))  # fill="x" hace que el marco se expanda horizontalmente
-
     # Botones para cada algoritmo
     tk.Button(algoritmos_frame, text="1. Profundidad", width=20,
-              command=lambda: Profundidad.Profundidad(sudoku)).pack(pady=5, side="top")
-    tk.Button(algoritmos_frame, text="2. Anchura", width=20, command=lambda: advertencia_anchura(sudoku)).pack(pady=5, side="top")
-    tk.Button(algoritmos_frame, text="3. A*", width=20).pack(pady=5, side="top")
+              command=lambda: Profundidad.Profundidad(copy.deepcopy(sudoku_copia))).pack(pady=5, side="top")
+    tk.Button(algoritmos_frame, text="2. Anchura", width=20, command=lambda: advertencia_anchura(copy.deepcopy(sudoku_copia))).pack(pady=5, side="top")
+    tk.Button(algoritmos_frame, text="3. A*", width=20, command=lambda: A_estrella.A_estrella(copy.deepcopy(sudoku_copia))).pack(pady=5, side="top")
     tk.Button(algoritmos_frame, text="4. Coste", width=20).pack(pady=5, side="top")
-    tk.Button(algoritmos_frame, text="5. Avara", width=20).pack(pady=5, side="top")
+    tk.Button(algoritmos_frame, text="5. Avara", width=20, command=lambda: Avara.avara(copy.deepcopy(sudoku_copia))).pack(pady=5, side="top")
+
 
 
 # Funciones de Apoyo
