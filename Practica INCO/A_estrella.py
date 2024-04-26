@@ -3,6 +3,7 @@ import tkinter as tk
 import time
 
 def A_estrella(sudoku, mostrar=True):
+
     # Función para encontrar la primera celda vacía en el sudoku
     def encontrar_celda_vacia(sudoku):
         for i in range(9):
@@ -29,6 +30,44 @@ def A_estrella(sudoku, mostrar=True):
                     return False
         
         return True
+
+    # Función heurística: cantidad de celdas vacías restantes en el sudoku
+    def heuristica_celdas_vacias(sudoku):
+        return sum(1 for i in range(9) for j in range(9) if sudoku[i][j] == 0)
+
+    # Función para contar las opciones disponibles para una celda específica
+    def heuristica_cantidad_opciones(sudoku, fila, columna):
+        opciones = 0
+        for numero in range(1, 10):
+            if es_numero_valido(sudoku, fila, columna, numero):
+                opciones += 1
+        return opciones
+
+    # Función para contar la frecuencia del número menos frecuente entre los posibles números de una celda vacía
+    def heuristica_frecuencia_menos_frecuente(sudoku, fila, columna):
+        frecuencias = {}
+        for numero in range(1, 10):
+            if es_numero_valido(sudoku, fila, columna, numero):
+                frecuencias[numero] = sum(1 for i in range(9) for j in range(9) if sudoku[i][j] == numero)
+        return min(frecuencias.values(), default=0)
+
+    # Función para contar las restricciones restantes en una celda vacía
+    def heuristica_restricciones_restantes(sudoku, fila, columna):
+        restricciones = 0
+        for numero in range(1, 10):
+            if not es_numero_valido(sudoku, fila, columna, numero):
+                restricciones += 1
+        return restricciones
+
+    # Función para calcular la suma de restricciones en una celda vacía
+    def heuristica_suma_restricciones(sudoku, fila, columna):
+        suma_restricciones = 0
+        for i in range(9):
+            for j in range(9):
+                if sudoku[i][j] == 0 and (i != fila or j != columna):
+                    if not es_numero_valido(sudoku, fila, columna, sudoku[i][j]):
+                        suma_restricciones += 1
+        return suma_restricciones
 
     # Función para resolver el sudoku utilizando el algoritmo A*
     def resolver_sudoku_a_estrella(sudoku):
@@ -62,21 +101,21 @@ def A_estrella(sudoku, mostrar=True):
                     # Asignar el número válido a la celda vacía
                     nuevo_estado[fila][columna] = numero
                     
-                    # Calcular la prioridad del nuevo estado (cantidad de celdas vacías restantes)
-                    prioridad = sum(1 for i in range(9) for j in range(9) if nuevo_estado[i][j] == 0)
+                    # Calcular la prioridad del nuevo estado (heurística)
+                    prioridad = heuristica_celdas_vacias(nuevo_estado) + heuristica_cantidad_opciones(nuevo_estado, fila, columna) + heuristica_frecuencia_menos_frecuente(nuevo_estado, fila, columna) + heuristica_restricciones_restantes(nuevo_estado, fila, columna) + heuristica_suma_restricciones(nuevo_estado, fila, columna)
                     
                     # Añadir el nuevo estado a la cola de prioridad
                     heapq.heappush(cola_prioridad, (prioridad, nuevo_estado))
 
     inicio = time.time()
-    
-    if resolver_sudoku_a_estrella(sudoku):
+    resultado = resolver_sudoku_a_estrella(sudoku)
+    if resultado:
         fin = time.time()
         tiempo = fin - inicio
-        mostrar_solucion(sudoku, "Sudoku Resuelto - A*", tiempo)
+        mostrar_solucion(resultado, "Sudoku Resuelto - A*", tiempo)
     else:
         print("\nNo se encontró solución para el Sudoku proporcionado.")
-    
+
 
 
 def mostrar_solucion(sudoku, titulo="Sudoku Resuelto", tiempo=None):
@@ -107,3 +146,4 @@ def mostrar_solucion(sudoku, titulo="Sudoku Resuelto", tiempo=None):
         tiempo_label.place(relx=0.5, rely=0.97, anchor="s")
 
     ventana_solucion.mainloop()
+
