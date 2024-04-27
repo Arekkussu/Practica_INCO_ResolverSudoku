@@ -6,6 +6,7 @@ import Anchura
 import Avara
 import A_estrella
 import copy
+import Restricciones
 
 # El Sudoku inicial
 sudoku_inicial = [
@@ -109,6 +110,7 @@ def mostrar_algoritmos(ventana_principal, sudoku):
     tk.Button(algoritmos_frame, text="3. A*", width=20, command=lambda: A_estrella.A_estrella(copy.deepcopy(sudoku_copia))).pack(pady=5, side="top")
     tk.Button(algoritmos_frame, text="4. Coste", width=20).pack(pady=5, side="top")
     tk.Button(algoritmos_frame, text="5. Avara", width=20, command=lambda: Avara.avara(copy.deepcopy(sudoku_copia))).pack(pady=5, side="top")
+    tk.Button(algoritmos_frame, text="6. Restricciones", width=20, command=lambda: Restricciones.restricciones(copy.deepcopy(sudoku_copia))).pack(pady=5, side="top")
 
 
 
