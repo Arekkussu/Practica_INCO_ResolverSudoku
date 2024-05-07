@@ -111,7 +111,7 @@ def mostrar_algoritmos(ventana_principal, sudoku):
     tk.Button(algoritmos_frame, text="3. A*", width=20, command=lambda: A_estrella.A_estrella(copy.deepcopy(sudoku_copia))).pack(pady=5, side="top")
     tk.Button(algoritmos_frame, text="4. Coste", width=20).pack(pady=5, side="top")
     tk.Button(algoritmos_frame, text="5. Avara", width=20, command=lambda: Avara.avara(copy.deepcopy(sudoku_copia))).pack(pady=5, side="top")
-    tk.Button(algoritmos_frame, text="6. Minimax", width=20, command=lambda: MinimaxJC.jugar_sudoku(copy.deepcopy(sudoku_copia))).pack(pady=5, side="top")
+    tk.Button(algoritmos_frame, text="6. Minimax", width=20, command=lambda: advertencia_minimax(copy.deepcopy(sudoku_copia))).pack(pady=5, side="top")
     tk.Button(algoritmos_frame, text="7. Restricciones", width=20, command=lambda: Restricciones.restricciones(copy.deepcopy(sudoku_copia))).pack(pady=5, side="top")
 
 
@@ -146,10 +146,20 @@ def es_sudoku_valido(sudoku):
 
 def advertencia_anchura(sudoku):
     respuesta = messagebox.askokcancel("Advertencia de eficiencia",
-                                       "Este método no es eficiente y puede consumir muchos recursos.\n¿Deseas continuar?")
+                                       "Este método no es eficiente y puede consumir muchos recursos.\n¿Desea continuar?")
     if respuesta:
         # Aquí podrías llamar a la función del algoritmo de anchura o manejar la lógica deseada.
         print("Ejecutando algoritmo de anchura...")
         Anchura.Anchura(sudoku)
+    else:
+        print("Operación cancelada.")
+
+def advertencia_minimax(sudoku):
+    respuesta = messagebox.askokcancel("Advertencia de eficiencia",
+                                       "Este método puede tardar en proporcionar la solución del sudoku debido a la complejidad computacional del mismo. El tiempo aproximado para obtener la resolución es de 30 minutos para en el caso de pulsar Sudoku Inicial, el resto si son difíciles el tiempo es mucho más largo. . \n¿Desea continuar?")
+    if respuesta:
+        # Aquí podrías llamar a la función del algoritmo de anchura o manejar la lógica deseada.
+        print("Ejecutando algoritmo minimax...")
+        MinimaxJC.mostrar_sudoku(sudoku)
     else:
         print("Operación cancelada.")

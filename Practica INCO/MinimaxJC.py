@@ -1,5 +1,11 @@
 import tkinter as tk
 import copy
+import time
+
+# Variables globales para manejar el estado del juego y las puntuaciones
+puntuacion_a = 0
+puntuacion_b = 0
+jugador_actual = 'A'  # Alternará entre 'A' y 'B'
 
 def es_movimiento_valido(sudoku, i, j, valor):
     """ Verifica si es válido colocar el valor en la celda (i, j). """
@@ -14,32 +20,14 @@ def es_movimiento_valido(sudoku, i, j, valor):
             if sudoku[start_i + x][start_j + y] == valor:
                 return False
     return True
-
 def realizar_movimiento(sudoku, movimiento, jugador):
     """ Realiza un movimiento en el tablero y actualiza el estado. """
     i, j, valor = movimiento
     nuevo_sudoku = copy.deepcopy(sudoku)
     nuevo_sudoku[i][j] = valor
+    print(f"Jugador {jugador} ha realizado un movimiento en la posición ({i}, {j}) con el valor {valor}.")
     return nuevo_sudoku
 
-def evaluar_estado(sudoku, jugador):
-    """ Evalúa el estado actual del juego para un jugador específico. """
-    if juego_terminado(sudoku):
-        return float('inf') if jugador == "jugador_actual" else float('-inf')
-    puntos = sum(calcular_puntuacion(sudoku, (i, j, sudoku[i][j]), jugador)
-                 for i in range(9) for j in range(9) if sudoku[i][j] != 0)
-    return puntos
-
-def posibles_movimientos(sudoku, jugador):
-    """ Devuelve una lista de todos los movimientos válidos para un jugador. """
-    movimientos = []
-    for i in range(9):
-        for j in range(9):
-            if sudoku[i][j] == 0:  # Casilla vacía
-                for valor in range(1, 10):
-                    if es_movimiento_valido(sudoku, i, j, valor):
-                        movimientos.append((i, j, valor))
-    return movimientos
 def calcular_puntuacion(sudoku, movimiento, jugador):
     i, j, valor = movimiento
     puntos = 0
@@ -70,6 +58,26 @@ def columna_completa(sudoku, columna):
 def subgrupo_completo(sudoku, i, j):
     start_i, start_j = 3 * (i // 3), 3 * (j // 3)
     return all(sudoku[start_i + x][start_j + y] != 0 for x in range(3) for y in range(3))
+
+def evaluar_estado(sudoku, jugador):
+    """ Evalúa el estado actual del juego para un jugador específico. """
+    if juego_terminado(sudoku):
+        return float('inf') if jugador == "jugador_actual" else float('-inf')
+    puntos = sum(calcular_puntuacion(sudoku, (i, j, sudoku[i][j]), jugador)
+                 for i in range(9) for j in range(9) if sudoku[i][j] != 0)
+    return puntos
+
+def posibles_movimientos(sudoku, jugador):
+    """ Devuelve una lista de todos los movimientos válidos para un jugador. """
+    movimientos = []
+    for i in range(9):
+        for j in range(9):
+            if sudoku[i][j] == 0:  # Casilla vacía
+                for valor in range(1, 10):
+                    if es_movimiento_valido(sudoku, i, j, valor):
+                        movimientos.append((i, j, valor))
+    return movimientos
+
 def juego_terminado(sudoku):
     """ Determina si el juego ha terminado, ya sea completando el Sudoku o por errores irreparables. """
     if hay_errores_irreparables(sudoku):
@@ -112,28 +120,15 @@ def tiene_duplicados(lista):
             elementos.add(item)
     return False
 
-def minimax_decision(sudoku, profundidad, jugador):
-    """ Decidir el mejor movimiento utilizando la función Minimax. """
-    best_score = float('-inf') if jugador == 'A' else float('inf')
-    best_move = None
-    for movimiento in posibles_movimientos(sudoku, jugador):
-        copia_sudoku = realizar_movimiento(sudoku, movimiento, jugador)
-        score = minimax(copia_sudoku, profundidad - 1, jugador == 'B', jugador, alpha=float('-inf'), beta=float('inf'))
-        if jugador == 'A' and score > best_score:
-            best_score, best_move = score, movimiento
-        elif jugador == 'B' and score < best_score:
-            best_score, best_move = score, movimiento
-    return best_move
-
-def minimax(sudoku, profundidad, es_maximizador, jugador, alpha, beta):
+def estrategia(sudoku, profundidad, es_maximizador, jugador, alpha, beta):
+    print(f"Estrategia está evaluando un nodo con profundidad {profundidad}...")
     if profundidad == 0 or juego_terminado(sudoku):
         return evaluar_estado(sudoku, jugador)
-
     if es_maximizador:
         max_eval = float('-inf')
         for movimiento in posibles_movimientos(sudoku, jugador):
             copia_sudoku = realizar_movimiento(sudoku, movimiento, jugador)
-            evaluacion = minimax(copia_sudoku, profundidad - 1, False, jugador, alpha, beta)
+            evaluacion = estrategia(copia_sudoku, profundidad - 1, False, jugador, alpha, beta)
             max_eval = max(max_eval, evaluacion)
             alpha = max(alpha, evaluacion)
             if beta <= alpha:
@@ -143,131 +138,122 @@ def minimax(sudoku, profundidad, es_maximizador, jugador, alpha, beta):
         min_eval = float('inf')
         for movimiento in posibles_movimientos(sudoku, jugador):
             copia_sudoku = realizar_movimiento(sudoku, movimiento, jugador)
-            evaluacion = minimax(copia_sudoku, profundidad - 1, True, jugador, alpha, beta)
+            evaluacion = estrategia(copia_sudoku, profundidad - 1, True, jugador, alpha, beta)
             min_eval = min(min_eval, evaluacion)
             beta = min(beta, evaluacion)
             if beta <= alpha:
                 break
         return min_eval
-def mostrar_sudoku(sudoku, mensaje):
-    global label_mensaje, label_puntuacion_a, label_puntuacion_b
-
-    label_mensaje.config(text=mensaje)
-    label_puntuacion_a.config(text=f"Puntuación Jugador A: {puntuacion_a}")
-    label_puntuacion_b.config(text=f"Puntuación Jugador B: {puntuacion_b}")
-
-    # Limpiar el marco actual del Sudoku
-    for widget in marco_sudoku.winfo_children():
-        widget.destroy()
-
-    # Rellenar el marco con los números actuales del Sudoku
-    for i in range(9):
-        for j in range(9):
-            numero = sudoku[i][j] if sudoku[i][j] != 0 else ""
-            celda = tk.Label(marco_sudoku, text=str(numero), width=2, height=1, font=("Helvetica", 16),
-                             borderwidth=1, relief="solid")
-            celda.grid(row=i, column=j, sticky="nsew", padx=2, pady=2)
 
 
-def actualizar_juego(sudoku, jugador, i, j, valor):
-    """ Realiza y muestra un movimiento, actualiza puntuaciones y maneja la alternancia de turnos. """
-    global puntuacion_a, puntuacion_b, jugador_actual
-    nuevo_sudoku = realizar_movimiento(sudoku, (i, j, valor), jugador)
-    puntuacion = calcular_puntuacion(sudoku, (i, j, valor), jugador)
+class SudokuGUI:
+    def __init__(self, root, sudoku, jugador_actual='A'):
+        self.root = root
+        self.sudoku = sudoku
+        self.jugador_actual = jugador_actual
+        self.puntuacion_a = 0
+        self.puntuacion_b = 0
+        self.init_GUI()
 
-    if jugador == 'A':
-        puntuacion_a += puntuacion
-    else:
-        puntuacion_b += puntuacion
+    def init_GUI(self):
+        self.root.title("Sudoku Competitivo")
+        self.canvas = tk.Canvas(self.root, width=400, height=500)
+        self.canvas.pack(fill=tk.BOTH, expand=True)
 
-    # Comprobación de finalización del juego
-    if juego_terminado(nuevo_sudoku):
-        ganador = 'Jugador A' if puntuacion_a > puntuacion_b else 'Jugador B'
-        mensaje = f"SUDOKU COMPLETADO, GANADOR: {ganador}"
-        mostrar_sudoku(nuevo_sudoku, mensaje)
-    else:
-        jugador_actual = 'A' if jugador_actual == 'B' else 'B'
-        mensaje = f"TURNO JUGADOR {jugador_actual}, PUNTUACIÓN ACCIÓN: {puntuacion}"
-        mostrar_sudoku(nuevo_sudoku, mensaje)
+        # Puntuación A y B en colores diferentes
+        self.score_text_a = self.canvas.create_text(100, 425, text=f"Puntuación A: {self.puntuacion_a}",
+                                                    font=('Helvetica', 12), fill="blue")
+        self.score_text_b = self.canvas.create_text(300, 425, text=f"Puntuación B: {self.puntuacion_b}",
+                                                    font=('Helvetica', 12), fill="black")
 
-def jugar_sudoku(sudoku):
-    global puntuacion_a, puntuacion_b, jugador_actual
-    mensaje = "El juego está en curso."
+        # Dibujar celdas y números
+        self.cells = [[None for _ in range(9)] for _ in range(9)]
+        cell_width = 400 // 9
+        cell_height = 400 // 9
+        for i in range(9):
+            for j in range(9):
+                x1, y1 = j * cell_width, i * cell_height
+                x2, y2 = x1 + cell_width, y1 + cell_height
+                color = "red" if self.sudoku[i][j] != 0 else "white"
+                self.cells[i][j] = self.canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline="black")
+                if self.sudoku[i][j] != 0:
+                    self.canvas.create_text(x1 + cell_width // 2, y1 + cell_height // 2, text=str(self.sudoku[i][j]), fill="black")
 
-    while not juego_terminado(sudoku):
-        movimiento = minimax_decision(sudoku, 3, jugador_actual)
-        if movimiento:
-            sudoku = realizar_movimiento(sudoku, movimiento, jugador_actual)
-            puntuacion = calcular_puntuacion(sudoku, movimiento, jugador_actual)
-            if jugador_actual == 'A':
-                puntuacion_a += puntuacion
+        # Botón para resolver Sudoku
+        self.Consejo_text = self.canvas.create_text(200, 475, text=f"Pulse el siguiente botón para comenzar la ejecución.\n     Después, espere a que el algoritmo se ejecute",
+                                                    font=('Helvetica', 12), fill="black")
+        self.solve_button = tk.Button(self.root, text="Resolver Sudoku", command=self.resolver_sudoku)
+        self.solve_button.pack()
+
+
+    def update_board(self, movimiento, valor, jugador):
+        i, j = movimiento
+        color = "blue" if jugador == 'A' else "black"
+        cell_width = 400 // 9
+        cell_height = 400 // 9
+        x1, y1 = j * cell_width, i * cell_height
+        self.canvas.itemconfig(self.cells[i][j], fill=color)
+        self.canvas.create_text(x1 + cell_width // 2, y1 + cell_height // 2, text=str(valor), fill="white")
+        # Actualizar puntuaciones
+        if jugador == 'A':
+            self.puntuacion_a += 1
+            self.canvas.itemconfig(self.score_text_a, text=f"Puntuación A: {self.puntuacion_a}")
+        else:
+            self.puntuacion_b += 1
+            self.canvas.itemconfig(self.score_text_b, text=f"Puntuación B: {self.puntuacion_b}")
+
+        print(f"Se ha actualizado la interfaz con el movimiento del Jugador {jugador}.")
+
+    def resolver_sudoku(self):
+        global jugador_actual, puntuacion_a, puntuacion_b
+        while not juego_terminado(self.sudoku):
+            if self.jugador_actual == 'A':
+                jugador = 'A'
+                self.jugador_actual = 'B'
             else:
-                puntuacion_b += puntuacion
-            jugador_actual = 'B' if jugador_actual == 'A' else 'A'
-        else:
-            mensaje = "No hay movimientos válidos disponibles. Juego finalizado."
-            break
+                jugador = 'B'
+                self.jugador_actual = 'A'
+            movimiento = self.mejor_movimiento(self.sudoku, jugador)
+            self.sudoku = realizar_movimiento(self.sudoku, movimiento, jugador)
+            self.update_board((movimiento[0], movimiento[1]), movimiento[2], jugador)
+            time.sleep(1)  # Espera para visualizar los movimientos
 
-    if juego_terminado(sudoku):
-        ganador = 'Jugador A' if puntuacion_a > puntuacion_b else 'Jugador B'
-        if hay_errores_irreparables(sudoku):
-            mensaje = "Error irreparable detectado. Juego finalizado."
-        else:
-            mensaje = f"Sudoku completado correctamente. Ganador: {ganador}"
+    def mejor_movimiento(self, sudoku, jugador):
+        movimientos = posibles_movimientos(sudoku, jugador)
+        mejor_movimiento = None
+        mejor_evaluacion = float('-inf') if jugador == 'A' else float('inf')
+        for movimiento in movimientos:
+            copia_sudoku = realizar_movimiento(sudoku, movimiento, jugador)
+            evaluacion = estrategia(copia_sudoku, 2, False, jugador, float('-inf'), float('inf'))
+            if (jugador == 'A' and evaluacion > mejor_evaluacion) or (jugador == 'B' and evaluacion < mejor_evaluacion):
+                mejor_evaluacion = evaluacion
+                mejor_movimiento = movimiento
+        return mejor_movimiento
 
-    mostrar_resultado_final(sudoku, puntuacion_a, puntuacion_b, mensaje)
+def mostrar_sudoku(sudoku):
+    root = tk.Tk()
+    app = SudokuGUI(root, sudoku)
+    root.mainloop()
 
+import unittest
 
-# Variables globales para manejar el estado del juego y las puntuaciones
-puntuacion_a = 0
-puntuacion_b = 0
-jugador_actual = 'A'  # Alternará entre 'A' y 'B'
-ventana = None
-marco_sudoku = None
-label_mensaje = None
-label_puntuacion_a = None
-label_puntuacion_b = None
+class TestSudokuLogic(unittest.TestCase):
+    def test_es_movimiento_valido(self):
+        sudoku = [[0]*9 for _ in range(9)]
+        sudoku[0][0] = 5
+        self.assertFalse(es_movimiento_valido(sudoku, 0, 1, 5))  # Mismo número en la fila
+        self.assertTrue(es_movimiento_valido(sudoku, 0, 1, 6))  # Número válido
 
-def crear_ventana():
-    global ventana, marco_sudoku, label_mensaje, label_puntuacion_a, label_puntuacion_b
-    ventana = tk.Tk()
-    ventana.title("Sudoku Competitivo")
-    ventana.geometry("450x550")
+    def test_realizar_movimiento(self):
+        sudoku = [[0]*9 for _ in range(9)]
+        movimiento = (0, 0, 5)
+        resultado = realizar_movimiento(sudoku, movimiento, 'A')
+        self.assertEqual(resultado[0][0], 5)
 
-    label_mensaje = tk.Label(ventana, text="INICIO DEL JUEGO", font=("Helvetica", 14))
-    label_mensaje.pack(pady=(5, 10))
+    def test_juego_terminado(self):
+        sudoku = [[1]*9 for _ in range(9)]
+        self.assertTrue(juego_terminado(sudoku))
 
-    marco_sudoku = tk.Frame(ventana)
-    marco_sudoku.pack(pady=(0, 20))
-
-    label_puntuacion_a = tk.Label(ventana, text=f"Puntuación Jugador A: {puntuacion_a}", font=("Helvetica", 12))
-    label_puntuacion_a.pack()
-
-    label_puntuacion_b = tk.Label(ventana, text=f"Puntuación Jugador B: {puntuacion_b}", font=("Helvetica", 12))
-    label_puntuacion_b.pack()
-
-    return ventana
-
-def mostrar_resultado_final(sudoku, puntuacion_a, puntuacion_b, mensaje):
-    """ Muestra el estado final del Sudoku y las puntuaciones de los jugadores. """
-    ventana_final = tk.Tk()
-    ventana_final.title("Resultado Final del Sudoku Competitivo")
-    ventana_final.geometry("450x600")
-
-    tk.Label(ventana_final, text="Sudoku Final", font=("Helvetica", 20, "bold")).pack(pady=(10, 5))
-    tk.Label(ventana_final, text=mensaje, font=("Helvetica", 14, "bold")).pack(pady=(5, 10))
-
-    marco_sudoku = tk.Frame(ventana_final)
-    marco_sudoku.pack(pady=(0, 20))
-
-    for i in range(9):
-        for j in range(9):
-            numero = sudoku[i][j] if sudoku[i][j] != 0 else ""
-            celda = tk.Label(marco_sudoku, text=str(numero), width=2, height=1, font=("Helvetica", 16),
-                             borderwidth=1, relief="solid")
-            celda.grid(row=i, column=j, sticky="nsew", padx=2, pady=2)
-
-    tk.Label(ventana_final, text=f"Puntuación Jugador A: {puntuacion_a}", font=("Helvetica", 14)).pack()
-    tk.Label(ventana_final, text=f"Puntuación Jugador B: {puntuacion_b}", font=("Helvetica", 14)).pack()
-
-    ventana_final.mainloop()
+# Correr las pruebas
+if __name__ == '__main__':
+    unittest.main()
